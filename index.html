@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Dashboard Generator</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for creating charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
+    <!-- SheetJS (xlsx) for reading Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- html2canvas and jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css.gg/css?=|moon|sun" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to enhance the UI */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            height: 40vh;
+            width: 100%;
+        }
+        /* Custom scrollbar for dark mode */
+        .dark ::-webkit-scrollbar { width: 12px; }
+        .dark ::-webkit-scrollbar-track { background: #1f2937; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; border: 3px solid #1f2937; }
+        
+        /* Modal styles */
+        .modal-overlay { transition: opacity 0.3s ease; }
+        .modal-container { transition: transform 0.3s ease; }
+        
+        /* Animation for dashboard cards */
+        .dashboard-card { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Custom radio button styles */
+        .custom-radio:checked + label { border-color: #4f46e5; background-color: #eef2ff; }
+        .dark .custom-radio:checked + label { border-color: #818cf8 !important; background-color: #3730a3 !important; }
+        
+        /* Editable table styles */
+        .editable-table td {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+        }
+        .dark .editable-table td { border-color: #374151; }
+        .editable-table td[contenteditable="true"]:hover { background-color: #f0f4ff; }
+        .editable-table td[contenteditable="true"]:focus { background-color: #eef2ff; outline: 2px solid #4f46e5; }
+        .dark .editable-table td[contenteditable="true"]:hover { background-color: #1e293b; }
+        .dark .editable-table td[contenteditable="true"]:focus { background-color: #312e81; }
+
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header Section -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Instant Dashboard Generator</h1>
+                <p class="text-gray-500 dark:text-gray-400">Turn any data into an interactive dashboard.</p>
+            </div>
+            <!-- Theme Toggle Button -->
+             <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <i class="gg-sun"></i>
+                <i class="gg-moon hidden"></i>
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <!-- File Upload Section -->
+            <div id="upload-section" class="text-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
+                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <h2 class="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Upload your Data File</h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Supports .xlsx or .csv files.</p>
+                <div class="mt-6">
+                    <input type="file" id="file-input" class="sr-only" accept=".xlsx, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                    <label for="file-input" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Select a file
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Loading/Processing Animation -->
+            <div id="loading-spinner" class="hidden text-center mt-8">
+                 <div class="relative w-24 h-24 mx-auto">
+                    <div class="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-800 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-semibold" id="loading-text">Reading...</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Display Section -->
+            <div id="dashboard-section" class="hidden">
+                 <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-0" id="dashboard-title"></h2>
+                    <div class="flex items-center space-x-3">
+                         <button id="reset-button" class="px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">New Report</button>
+                        <button id="download-pdf" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Download PDF</button>
+                    </div>
+                </div>
+                <!-- Dashboard Grid -->
+                <div id="dashboard-grid" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
+                    <!-- Charts will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- Error Message Display -->
+            <div id="error-message" class="hidden mt-6 text-center p-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg">
+                <p id="error-text"></p>
+                 <button id="error-reset-button" class="mt-4 px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">Try Again</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Configuration Modal -->
+    <div id="config-modal" class="modal-overlay fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="modal-container bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl transform scale-95">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Dashboard Setup</h3>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Step 1: Report Type -->
+                <div class="step">
+                    <h4 class="font-semibold text-lg mb-2">1. Select Report Period</h4>
+                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <input type="radio" name="report-type" value="daily" id="type-daily" class="sr-only custom-radio" checked>
+                        <label for="type-daily" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Daily</label>
+                        
+                        <input type="radio" name="report-type" value="quarterly" id="type-quarterly" class="sr-only custom-radio">
+                        <label for="type-quarterly" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Quarterly</label>
+                        
+                        <input type="radio" name="report-type" value="half-yearly" id="type-half-yearly" class="sr-only custom-radio">
+                        <label for="type-half-yearly" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Half-Yearly</label>
+
+                        <input type="radio" name="report-type" value="full-year" id="type-full-year" class="sr-only custom-radio">
+                        <label for="type-full-year" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Full Year</label>
+                    </div>
+                </div>
+
+                <!-- Step 2: Chart Selection -->
+                <div class="step">
+                    <h4 class="font-semibold text-lg mb-2">2. Choose Your Charts</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="bar" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Bar Chart</span></label>
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="line" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Line Chart</span></label>
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="pie" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Pie Chart</span></label>
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="kpi" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Key Metrics</span></label>
+                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="table" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Data Table</span></label>
+                    </div>
+                </div>
+
+                <!-- Step 3: Color Theme -->
+                 <div class="step">
+                    <h4 class="font-semibold text-lg mb-2">3. Select Chart Color Theme</h4>
+                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <input type="radio" name="color-theme" value="vibrant" id="theme-vibrant" class="sr-only custom-radio" checked>
+                        <label for="theme-vibrant" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Vibrant</label>
+                        
+                        <input type="radio" name="color-theme" value="cool" id="theme-cool" class="sr-only custom-radio">
+                        <label for="theme-cool" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Cool</label>
+
+                        <input type="radio" name="color-theme" value="grayscale" id="theme-grayscale" class="sr-only custom-radio">
+                        <label for="theme-grayscale" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Black & White</label>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                <button id="cancel-modal" class="px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-600 dark:text-gray-200 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500">Cancel</button>
+                <button id="generate-dashboard" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Generate Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Global State ---
+            let jsonData = [];
+            let processedData = [];
+            let dashboardPreferences = {};
+            let fileName = '';
+            let currentCharts = {};
+            let detectedKeys = {};
+
+            const COLOR_PALETTES = {
+                vibrant: ['#ec4899', '#f97316', '#8b5cf6', '#22c55e', '#3b82f6', '#f43f5e', '#14b8a6'],
+                cool: ['#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a78bfa', '#0ea5e9', '#34d399'],
+                grayscale: ['#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db'],
+            };
+
+            // --- DOM Element References ---
+            const themeToggle = document.getElementById('theme-toggle'),
+                sunIcon = themeToggle.querySelector('.gg-sun'),
+                moonIcon = themeToggle.querySelector('.gg-moon'),
+                fileInput = document.getElementById('file-input'),
+                uploadSection = document.getElementById('upload-section'),
+                dashboardSection = document.getElementById('dashboard-section'),
+                dashboardGrid = document.getElementById('dashboard-grid'),
+                loadingSpinner = document.getElementById('loading-spinner'),
+                loadingText = document.getElementById('loading-text'),
+                errorMessage = document.getElementById('error-message'),
+                errorText = document.getElementById('error-text'),
+                downloadPdfBtn = document.getElementById('download-pdf'),
+                resetButton = document.getElementById('reset-button'),
+                errorResetButton = document.getElementById('error-reset-button'),
+                configModal = document.getElementById('config-modal'),
+                cancelModalBtn = document.getElementById('cancel-modal'),
+                generateDashboardBtn = document.getElementById('generate-dashboard');
+
+            // --- Theme Management ---
+            const applyTheme = (isDark) => {
+                document.documentElement.classList.toggle('dark', isDark);
+                sunIcon.classList.toggle('hidden', isDark);
+                moonIcon.classList.toggle('hidden', !isDark);
+                updateAllChartThemes(isDark);
+            };
+
+            const isDarkMode = localStorage.getItem('theme') === 'dark';
+            applyTheme(isDarkMode);
+
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                applyTheme(isDark);
+            });
+
+            // --- Event Listeners ---
+            fileInput.addEventListener('change', handleFile);
+            resetButton.addEventListener('click', resetUI);
+            errorResetButton.addEventListener('click', resetUI);
+            cancelModalBtn.addEventListener('click', hideModal);
+            generateDashboardBtn.addEventListener('click', generateDashboardFromModal);
+            
+            // --- File Handling & Data Parsing ---
+            function handleFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                fileName = file.name;
+                showLoading(true, 'Reading...');
+                hideError();
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+                        if (jsonData.length === 0) throw new Error("The uploaded file is empty or unreadable.");
+                        
+                        detectedKeys = autoDetectColumns(jsonData);
+                        if (!detectedKeys.dateKey || !detectedKeys.valueKey) {
+                            throw new Error("Could not automatically detect columns. Please ensure your file has headers like 'Date', 'Sales', 'Timestamp', 'Temperature', etc.");
+                        }
+                        
+                        showModal();
+
+                    } catch (err) {
+                        handleProcessingError(err, "Failed to process the file.");
+                    } finally {
+                        showLoading(false);
+                    }
+                };
+                reader.onerror = () => handleProcessingError(new Error("FileReader error"), "Could not read the file.");
+                reader.readAsArrayBuffer(file);
+            }
+
+            /**
+             * A more robust date parsing utility.
+             * @param {any} dateInput - The value from the spreadsheet cell.
+             * @returns {Date|null} A valid Date object or null.
+             */
+            function parseDate(dateInput) {
+                if (dateInput instanceof Date && !isNaN(dateInput)) {
+                    return dateInput; // Already a valid date from SheetJS
+                }
+                if (typeof dateInput === 'string' || typeof dateInput === 'number') {
+                    const parsedDate = new Date(dateInput);
+                    if (!isNaN(parsedDate)) {
+                        return parsedDate;
+                    }
+                }
+                return null;
+            }
+            
+            function autoDetectColumns(data) {
+                if (!data || data.length === 0) return { dateKey: null, valueKey: null };
+
+                const headers = Object.keys(data[0]);
+                const dateKeywords = ['date', 'time', 'day', 'timestamp', 'period', 'when'];
+                const valueKeywords = ['sales', 'revenue', 'amount', 'value', 'quantity', 'price', 'temp', 'level', 'stock', 'count', 'score', 'reading', 'humidity'];
+                const nonValueKeywords = ['id', 'identifier'];
+                const MAX_ROWS_TO_SCAN = Math.min(10, data.length);
+
+                let potentialDateKeys = [];
+                let potentialValueKeys = [];
+
+                // --- Pass 1: Score columns based on header keywords ---
+                headers.forEach(h => {
+                    const hLower = h.toLowerCase();
+                    if (dateKeywords.some(k => hLower.includes(k))) {
+                        potentialDateKeys.push({ key: h, score: 10 });
+                    }
+                    if (valueKeywords.some(k => hLower.includes(k)) && !nonValueKeywords.some(k => hLower.includes(k))) {
+                        potentialValueKeys.push({ key: h, score: 10 });
+                    }
+                });
+
+                // --- Pass 2: Score all columns based on content type from multiple rows ---
+                const columnScores = {};
+                headers.forEach(h => {
+                    columnScores[h] = { date: 0, number: 0 };
+                });
+
+                for (let i = 0; i < MAX_ROWS_TO_SCAN; i++) {
+                    const row = data[i];
+                    if (!row) continue;
+                    for (const h of headers) {
+                        const cellValue = row[h];
+                        if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
+                            if (parseDate(cellValue)) {
+                                columnScores[h].date++;
+                            }
+                            if (!isNaN(parseFloat(cellValue)) && isFinite(cellValue)) {
+                                columnScores[h].number++;
+                            }
+                        }
+                    }
+                }
+                
+                // Add content scores to keyword-based potentials
+                potentialDateKeys.forEach(k => k.score += columnScores[k.key].date);
+                potentialValueKeys.forEach(k => k.score += columnScores[k.key].number);
+                
+                // Also consider non-keyword columns that are strongly typed
+                headers.forEach(h => {
+                    if (!potentialDateKeys.some(k => k.key === h) && columnScores[h].date > MAX_ROWS_TO_SCAN / 2) {
+                        potentialDateKeys.push({ key: h, score: columnScores[h].date });
+                    }
+                     if (!potentialValueKeys.some(k => k.key === h) && columnScores[h].number > MAX_ROWS_TO_SCAN / 2) {
+                        potentialValueKeys.push({ key: h, score: columnScores[h].number });
+                    }
+                });
+
+
+                // --- Final Decision ---
+                potentialDateKeys.sort((a, b) => b.score - a.score);
+                potentialValueKeys.sort((a, b) => b.score - a.score);
+
+                let dateKey = potentialDateKeys.length > 0 && potentialDateKeys[0].score > 0 ? potentialDateKeys[0].key : null;
+                let valueKey = null;
+
+                // Find the best value key that is not the same as the date key
+                for (const vk of potentialValueKeys) {
+                    if (vk.score > 0 && vk.key !== dateKey) {
+                        valueKey = vk.key;
+                        break;
+                    }
+                }
+                
+                // Fallback if no value key was found yet (e.g., it was the same as dateKey)
+                if (!valueKey && potentialValueKeys.length > 1 && potentialValueKeys[0].key === dateKey) {
+                    valueKey = potentialValueKeys[1].key
+                }
+
+
+                return { dateKey, valueKey };
+            }
+
+            // --- Modal and Configuration ---
+            function showModal() {
+                configModal.classList.remove('hidden');
+                setTimeout(() => {
+                    configModal.querySelector('.modal-container').classList.remove('scale-95');
+                    configModal.classList.remove('opacity-0');
+                }, 10);
+            }
+            
+            function hideModal() {
+                configModal.querySelector('.modal-container').classList.add('scale-95');
+                configModal.classList.add('opacity-0');
+                setTimeout(() => configModal.classList.add('hidden'), 300);
+            }
+
+            function generateDashboardFromModal() {
+                hideModal();
+                showLoading(true, 'Analyzing...');
+                setTimeout(() => { 
+                     dashboardPreferences = {
+                        reportType: document.querySelector('input[name="report-type"]:checked').value,
+                        charts: Array.from(document.querySelectorAll('input[name="chart-select"]:checked')).map(cb => cb.value),
+                        colors: COLOR_PALETTES[document.querySelector('input[name="color-theme"]:checked').value]
+                    };
+                    processDataAndBuildDashboard();
+                }, 300);
+            }
+
+            // --- Data Processing and Dashboard Generation ---
+            function processDataAndBuildDashboard() {
+                loadingText.textContent = 'Processing...';
+
+                processedData = jsonData.map((row, index) => {
+                    let date = parseDate(row[detectedKeys.dateKey]);
+                    if (!date) return null;
+                    const value = parseFloat(row[detectedKeys.valueKey]);
+                    return !isNaN(value) ? { date, value, originalIndex: index } : null;
+                }).filter(Boolean);
+
+                if (processedData.length === 0) {
+                    handleProcessingError(new Error("No valid data."), "No valid data rows with a readable date and numeric value were found.");
+                    return;
+                }
+                
+                processedData.sort((a,b) => a.date - b.date);
+                
+                refreshDashboard();
+                showLoading(false);
+            }
+
+            function refreshDashboard() {
+                loadingText.textContent = 'Aggregating...';
+                const dateRangeDays = processedData.length > 1 ? (processedData[processedData.length-1].date - processedData[0].date) / (1000 * 3600 * 24) : 0;
+
+                let effectiveReportType = dashboardPreferences.reportType;
+                if (effectiveReportType === 'full-year' && dateRangeDays < 180) effectiveReportType = 'half-yearly';
+                if (effectiveReportType === 'half-yearly' && dateRangeDays < 90) effectiveReportType = 'quarterly';
+                if (effectiveReportType === 'quarterly' && dateRangeDays < 30) effectiveReportType = 'daily';
+                
+                const dataAggregates = aggregateData(processedData, effectiveReportType);
+                
+                loadingText.textContent = 'Building...';
+
+                uploadSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                document.getElementById('dashboard-title').textContent = `${fileName} - ${effectiveReportType.replace('-',' ').toUpperCase()} Report`;
+
+                renderDashboard(dataAggregates, dashboardPreferences.charts);
+            }
+            
+            function aggregateData(data, reportType) {
+                const aggregates = { byPeriod: {}, totalValue: 0, recordCount: data.length };
+
+                data.forEach(item => {
+                    aggregates.totalValue += item.value;
+                    let periodKey;
+                    const d = item.date;
+
+                    switch(reportType) {
+                        case 'daily':
+                            periodKey = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                            break;
+                        case 'quarterly':
+                            periodKey = `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`;
+                            break;
+                        case 'half-yearly':
+                            periodKey = `${d.getUTCMonth() < 6 ? 'H1' : 'H2'} ${d.getUTCFullYear()}`;
+                            break;
+                        case 'full-year':
+                            periodKey = String(d.getUTCFullYear());
+                            break;
+                    }
+                    aggregates.byPeriod[periodKey] = (aggregates.byPeriod[periodKey] || 0) + item.value;
+                });
+                return aggregates;
+            }
+
+            // --- Chart and Dashboard Rendering ---
+            function renderDashboard(aggregates, chartsToRender) {
+                destroyCharts();
+                dashboardGrid.innerHTML = '';
+                
+                let cardDelay = 0;
+                const addCard = (content, fullWidth = false) => {
+                    const card = document.createElement('div');
+                    card.className = `dashboard-card bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md ${fullWidth ? 'lg:col-span-2 2xl:col-span-3' : ''}`;
+                    card.style.animationDelay = `${cardDelay * 100}ms`;
+                    card.innerHTML = content;
+                    dashboardGrid.appendChild(card);
+                    cardDelay++;
+                }
+
+                const renderChartCard = (type, title) => {
+                     addCard(`
+                        <h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">${title}</h3>
+                        <div class="chart-container"><canvas id="chart-${type}"></canvas></div>
+                    `);
+                };
+
+                chartsToRender.forEach(chartType => {
+                    switch (chartType) {
+                        case 'bar': renderChartCard('bar', `Total ${detectedKeys.valueKey} by Period`); break;
+                        case 'line': renderChartCard('line', `${detectedKeys.valueKey} Trend Over Time`); break;
+                        case 'pie': renderChartCard('pie', `${detectedKeys.valueKey} Breakdown by Period`); break;
+                        case 'kpi':
+                             const totalValFmt = aggregates.totalValue.toLocaleString('en-US', { maximumFractionDigits: 2 });
+                             const avgValFmt = (aggregates.totalValue / aggregates.recordCount).toLocaleString('en-US', { maximumFractionDigits: 2 });
+                             addCard(`
+                                <h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">Key Metrics</h3>
+                                <div class="grid grid-cols-2 gap-4 text-center h-full content-around">
+                                     <div><p class="text-sm text-gray-500 dark:text-gray-400">Total ${detectedKeys.valueKey}</p><p class="text-2xl lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalValFmt}</p></div>
+                                     <div><p class="text-sm text-gray-500 dark:text-gray-400">Data Points</p><p class="text-2xl lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">${aggregates.recordCount.toLocaleString()}</p></div>
+                                     <div class="col-span-2"><p class="text-sm text-gray-500 dark:text-gray-400">Average ${detectedKeys.valueKey}</p><p class="text-xl lg:text-2xl font-semibold text-gray-700 dark:text-gray-300">${avgValFmt}</p></div>
+                                </div>
+                             `);
+                             break;
+                        case 'table':
+                             let tableHTML = `<h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">Editable Data Table</h3><div class="overflow-auto max-h-96"><table class="w-full text-sm text-left editable-table"><thead><tr class="bg-gray-50 dark:bg-gray-700"><th class="px-3 py-2">${detectedKeys.dateKey}</th><th class="px-3 py-2">${detectedKeys.valueKey}</th></tr></thead><tbody>`;
+                             processedData.forEach(row => {
+                                 tableHTML += `<tr><td class="px-3 py-2" data-index="${row.originalIndex}" data-key="${detectedKeys.dateKey}">${row.date.toLocaleDateString()}</td><td class="px-3 py-2" contenteditable="true" data-index="${row.originalIndex}" data-key="${detectedKeys.valueKey}">${row.value}</td></tr>`;
+                             });
+                             tableHTML += `</tbody></table></div>`;
+                             addCard(tableHTML, true);
+                             break;
+                    }
+                });
+                
+                setTimeout(() => {
+                    createCharts(aggregates, chartsToRender);
+                    attachTableListeners();
+                }, 50);
+            }
+
+            function createCharts(aggregates, chartsToRender) {
+                const isDark = document.documentElement.classList.contains('dark');
+                const baseOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: isDark ? '#374151' : '#e5e7eb' }, ticks: { color: isDark ? '#9ca3af' : '#6b7280' } },
+                        x: { grid: { display: false }, ticks: { color: isDark ? '#9ca3af' : '#6b7280' } }
+                    }
+                };
+                
+                const sortedPeriods = Object.keys(aggregates.byPeriod).sort((a,b) => {
+                    // Custom sort to handle daily, quarterly, half-yearly, and yearly keys correctly
+                    const dateA = new Date(a.replace(/Q[1-4] |H[1-2] /,''));
+                    const dateB = new Date(b.replace(/Q[1-4] |H[1-2] /,''));
+                    return dateA - dateB;
+                });
+
+                const chartData = {
+                    labels: sortedPeriods,
+                    datasets: [{ label: detectedKeys.valueKey, data: sortedPeriods.map(p => aggregates.byPeriod[p]), backgroundColor: dashboardPreferences.colors, borderColor: dashboardPreferences.colors[2] || '#4f46e5', tension: 0.1, fill: true }]
+                };
+
+                chartsToRender.forEach(type => {
+                    const ctx = document.getElementById(`chart-${type}`)?.getContext('2d');
+                    if(!ctx) return;
+                    let options = JSON.parse(JSON.stringify(baseOptions)); // Deep copy
+                    if(type === 'pie') options.scales = {};
+
+                    currentCharts[type] = new Chart(ctx, { type, data: chartData, options });
+                });
+            }
+
+            function attachTableListeners() {
+                const table = document.querySelector('.editable-table');
+                if(!table) return;
+                table.addEventListener('focusout', (event) => {
+                    if (event.target && event.target.hasAttribute('contenteditable')) {
+                        const cell = event.target;
+                        const index = parseInt(cell.dataset.index);
+                        const newValue = parseFloat(cell.textContent);
+                        
+                        const originalRow = processedData.find(d => d.originalIndex === index);
+                        if (!isNaN(newValue) && originalRow.value !== newValue) {
+                            originalRow.value = newValue;
+                            jsonData[index][detectedKeys.valueKey] = newValue;
+                            refreshDashboard();
+                        } else {
+                            // Revert if invalid or unchanged
+                            cell.textContent = originalRow.value;
+                        }
+                    }
+                });
+            }
+            
+             // --- UI Helper and State Functions ---
+            function showLoading(isLoading, text = '') {
+                loadingSpinner.classList.toggle('hidden', !isLoading);
+                if (isLoading) loadingText.textContent = text;
+                uploadSection.classList.toggle('hidden', isLoading);
+            }
+
+            function handleProcessingError(error, userMessage) {
+                console.error("Processing Error:", error);
+                errorText.textContent = `${userMessage} ${error.message}`;
+                errorMessage.classList.remove('hidden');
+                showLoading(false);
+                hideModal();
+                dashboardSection.classList.add('hidden');
+                uploadSection.classList.add('hidden');
+            }
+
+            function hideError() { errorMessage.classList.add('hidden'); }
+
+            function resetUI() {
+                destroyCharts(); fileInput.value = ''; jsonData = []; processedData = []; fileName = '';
+                uploadSection.classList.remove('hidden');
+                dashboardSection.classList.add('hidden');
+                hideError(); hideModal();
+            }
+
+            function destroyCharts() {
+                Object.values(currentCharts).forEach(chart => chart?.destroy());
+                currentCharts = {};
+            }
+
+            function updateAllChartThemes(isDark) {
+                Object.values(currentCharts).forEach(chart => {
+                    if (chart) {
+                        chart.options.plugins.legend.labels.color = isDark ? '#e5e7eb' : '#374151';
+                        if (chart.options.scales) {
+                           ['x', 'y', 'r'].forEach(axis => {
+                                if(chart.options.scales[axis]) {
+                                    chart.options.scales[axis].grid.color = isDark ? '#374151' : '#e5e7eb';
+                                    chart.options.scales[axis].ticks.color = isDark ? '#9ca3af' : '#6b7280';
+                                }
+                           });
+                        }
+                        chart.update();
+                    }
+                });
+            }
+
+            // --- PDF Download ---
+            downloadPdfBtn.addEventListener('click', () => {
+                const dashboard = document.getElementById('dashboard-grid');
+                const title = document.getElementById('dashboard-title').textContent;
+                
+                const wasDark = document.documentElement.classList.contains('dark');
+                if (wasDark) applyTheme(false); 
+
+                downloadPdfBtn.textContent = 'Generating...';
+                downloadPdfBtn.disabled = true;
+
+                html2canvas(dashboard, { scale: 2, backgroundColor: '#f9fafb', windowWidth: 1400 }).then(canvas => {
+                    if (wasDark) applyTheme(true);
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({ orientation: 'l', unit: 'px', format: 'a4' });
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const canvasAspectRatio = canvas.width / canvas.height;
+                    const pdfAspectRatio = pdfWidth / pdfHeight;
+                    let renderWidth, renderHeight;
+
+                    if (canvasAspectRatio > pdfAspectRatio) {
+                        renderWidth = pdfWidth;
+                        renderHeight = pdfWidth / canvasAspectRatio;
+                    } else {
+                        renderHeight = pdfHeight;
+                        renderWidth = pdfHeight * canvasAspectRatio;
+                    }
+                    
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, renderWidth, renderHeight);
+                    pdf.save(`${title.replace(/ /g, '_')}.pdf`);
+                }).catch(err => {
+                    handleProcessingError(err, "PDF generation failed.");
+                }).finally(() => {
+                    downloadPdfBtn.textContent = 'Download PDF';
+                    downloadPdfBtn.disabled = false;
+                    if (wasDark) applyTheme(true);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
