@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instant Dashboard Generator</title>
+    <title>Advanced AI Dashboard Generator</title>
     
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,175 +18,170 @@
     <!-- html2canvas and jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Anime.js for advanced animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Inter & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://css.gg/css?=|moon|sun" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://css.gg/css?=|moon|sun|bot|user|check|close" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* Custom styles to enhance the UI */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .chart-container {
-            position: relative;
-            height: 40vh;
-            width: 100%;
-        }
-        /* Custom scrollbar for dark mode */
-        .dark ::-webkit-scrollbar { width: 12px; }
-        .dark ::-webkit-scrollbar-track { background: #1f2937; }
-        .dark ::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 20px; border: 3px solid #1f2937; }
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; height: 40vh; width: 100%; }
+        .dark ::-webkit-scrollbar { width: 8px; }
+        .dark ::-webkit-scrollbar-track { background: #1e293b; }
+        .dark ::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 20px; }
+        .chat-panel, #settings-panel { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+        .dashboard-card { opacity: 0; }
         
-        /* Modal styles */
-        .modal-overlay { transition: opacity 0.3s ease; }
-        .modal-container { transition: transform 0.3s ease; }
-        
-        /* Animation for dashboard cards */
-        .dashboard-card { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .control-radio:checked + label, 
+        .control-checkbox:checked + label {
+            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
         }
-        
-        /* Custom radio button styles */
-        .custom-radio:checked + label { border-color: #4f46e5; background-color: #eef2ff; }
-        .dark .custom-radio:checked + label { border-color: #818cf8 !important; background-color: #3730a3 !important; }
-        
-        /* Editable table styles */
-        .editable-table td {
-            padding: 8px 12px;
-            border: 1px solid #e5e7eb;
-            transition: background-color 0.2s;
-        }
-        .dark .editable-table td { border-color: #374151; }
-        .editable-table td[contenteditable="true"]:hover { background-color: #f0f4ff; }
-        .editable-table td[contenteditable="true"]:focus { background-color: #eef2ff; outline: 2px solid #4f46e5; }
-        .dark .editable-table td[contenteditable="true"]:hover { background-color: #1e293b; }
-        .dark .editable-table td[contenteditable="true"]:focus { background-color: #312e81; }
 
+        .control-radio:checked + label { border-color: #4f46e5; background-color: #eef2ff; --tw-ring-color: #4f46e5; color: #312e81; }
+        .control-checkbox:checked + label { border-color: #16a34a; background-color: #f0fdf4; --tw-ring-color: #16a34a; color: #15803d; }
+        
+        .dark .control-radio:checked + label { border-color: #818cf8 !important; background-color: #3730a3 !important; color: #e0e7ff !important; --tw-ring-color: #818cf8; }
+        .dark .control-checkbox:checked + label { border-color: #4ade80 !important; background-color: #166534 !important; color: #dcfce7 !important; --tw-ring-color: #4ade80; }
+        
+        .ai-insights-card { background: linear-gradient(135deg, #f5f3ff, #ecfeff); }
+        .dark .ai-insights-card { background: linear-gradient(135deg, #1e293b, #312e81); }
+        .spinner { border: 2px solid #e5e7eb; border-top: 2px solid #4f46e5; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .gradient-text { background: linear-gradient(to right, #4f46e5, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
 
-    <div class="container mx-auto p-4 md:p-8">
-        <!-- Header Section -->
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Instant Dashboard Generator</h1>
-                <p class="text-gray-500 dark:text-gray-400">Turn any data into an interactive dashboard.</p>
-            </div>
-            <!-- Theme Toggle Button -->
-             <button id="theme-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <i class="gg-sun"></i>
-                <i class="gg-moon hidden"></i>
-            </button>
-        </header>
-
+    <div class="flex h-screen overflow-hidden">
         <!-- Main Content Area -->
-        <main id="main-content">
-            <!-- File Upload Section -->
-            <div id="upload-section" class="text-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 shadow-md">
-                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                <h2 class="mt-4 text-xl font-semibold text-gray-900 dark:text-white">Upload your Data File</h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Supports .xlsx or .csv files.</p>
-                <div class="mt-6">
-                    <input type="file" id="file-input" class="sr-only" accept=".xlsx, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
-                    <label for="file-input" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Select a file
-                    </label>
+        <main id="main-content" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+            <!-- Global Buttons -->
+             <div class="absolute top-4 right-4 flex gap-2 z-10">
+                <button id="new-report-button" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 bg-white dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 shadow-sm border border-slate-200 dark:border-slate-600">New Report</button>
+                <button id="download-pdf" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hidden shadow-sm">Download PDF</button>
+            </div>
+            
+            <div id="upload-section" class="h-full">
+                <!-- Upload UI -->
+                <div class="text-center p-8 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800/50 shadow-lg h-full flex flex-col justify-center">
+                    <svg class="mx-auto h-16 w-16 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                    <h2 class="mt-4 text-2xl font-bold text-slate-900 dark:text-white">Bring Your Data to Life</h2>
+                    <p class="mt-2 text-base text-slate-500 dark:text-slate-400">Upload one or more Excel or CSV files to instantly generate an interactive dashboard.</p>
+                    <div class="mt-8">
+                        <input type="file" id="file-input" class="sr-only" multiple accept=".xlsx, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                        <label for="file-input" class="cursor-pointer inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Select Files</label>
+                    </div>
+                    <div id="file-list" class="mt-4 text-sm text-slate-500 dark:text-slate-400"></div>
                 </div>
             </div>
             
-            <!-- Loading/Processing Animation -->
-            <div id="loading-spinner" class="hidden text-center mt-8">
+            <div id="loading-spinner" class="hidden h-full flex items-center justify-center flex-col">
                  <div class="relative w-24 h-24 mx-auto">
                     <div class="absolute inset-0 border-4 border-indigo-200 dark:border-indigo-800 rounded-full"></div>
                     <div class="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <div class="absolute inset-0 flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-semibold" id="loading-text">Reading...</div>
                 </div>
+                <p id="loading-text" class="mt-4 text-lg font-medium text-slate-600 dark:text-slate-300">Reading files...</p>
             </div>
 
-            <!-- Dashboard Display Section -->
-            <div id="dashboard-section" class="hidden">
-                 <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 md:mb-0" id="dashboard-title"></h2>
-                    <div class="flex items-center space-x-3">
-                         <button id="reset-button" class="px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">New Report</button>
-                        <button id="download-pdf" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Download PDF</button>
+            <div id="dashboard-container" class="hidden">
+                 <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6" id="dashboard-title"></h2>
+                 
+                 <div id="dashboard-controls" class="p-4 bg-white dark:bg-slate-800/50 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-lg mb-2 text-slate-900 dark:text-white">Dashboard Type</h4>
+                            <div class="grid grid-cols-2 gap-2" id="dashboard-type-selector"></div>
+                        </div>
+                        <div class="space-y-4">
+                             <h4 class="font-semibold text-lg mb-2 text-slate-900 dark:text-white">Report Period</h4>
+                             <div class="grid grid-cols-2 gap-2" id="report-period-selector"></div>
+                        </div>
+                        <div>
+                             <h4 class="font-semibold text-lg mb-2 text-slate-900 dark:text-white">Visible Charts</h4>
+                             <div class="grid grid-cols-2 gap-2" id="chart-selector"></div>
+                        </div>
+                        <div id="color-customization-panel">
+                             <h4 class="font-semibold text-lg mb-2 text-slate-900 dark:text-white">Chart Colors</h4>
+                             <div class="grid grid-cols-3 gap-2 mb-3" id="color-theme-selector"></div>
+                             <h5 class="font-semibold text-md mb-2 text-slate-800 dark:text-slate-300">Custom Colors</h5>
+                             <div class="flex flex-wrap gap-2" id="custom-color-container">
+                                <!-- Color pickers will be injected here by JS -->
+                             </div>
+                        </div>
                     </div>
-                </div>
-                <!-- Dashboard Grid -->
-                <div id="dashboard-grid" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
-                    <!-- Charts will be dynamically inserted here -->
-                </div>
+                 </div>
+
+                 <div id="dashboard-grid" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6"></div>
             </div>
 
-            <!-- Error Message Display -->
-            <div id="error-message" class="hidden mt-6 text-center p-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 rounded-lg">
+            <div id="error-message" class="hidden mt-6 text-center p-4 bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-600/50 text-red-700 dark:text-red-200 rounded-lg">
                 <p id="error-text"></p>
                  <button id="error-reset-button" class="mt-4 px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">Try Again</button>
             </div>
         </main>
-    </div>
+        
+        <!-- Floating Action Buttons -->
+        <div class="fixed bottom-5 right-5 flex flex-col gap-3 z-40">
+            <button id="open-chat-button" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full p-4 shadow-lg hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </button>
+            <button id="settings-button" class="bg-slate-600 hover:bg-slate-700 text-white rounded-full p-4 shadow-lg">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
 
-    <!-- Configuration Modal -->
-    <div id="config-modal" class="modal-overlay fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
-        <div class="modal-container bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl transform scale-95">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Dashboard Setup</h3>
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="fixed bottom-20 right-5 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-2xl p-6 flex flex-col gap-6 transform translate-y-[120%] opacity-0 z-50">
+            <div>
+                <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-2">Theme</h3>
+                <button id="theme-toggle" class="w-full flex items-center justify-center p-2 rounded-md text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                    <i class="gg-sun"></i>
+                    <i class="gg-moon hidden"></i>
+                    <span class="ml-2 text-sm">Toggle Light/Dark Mode</span>
+                </button>
             </div>
-            <div class="p-6 space-y-6">
-                <!-- Step 1: Report Type -->
-                <div class="step">
-                    <h4 class="font-semibold text-lg mb-2">1. Select Report Period</h4>
-                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <input type="radio" name="report-type" value="daily" id="type-daily" class="sr-only custom-radio" checked>
-                        <label for="type-daily" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Daily</label>
-                        
-                        <input type="radio" name="report-type" value="quarterly" id="type-quarterly" class="sr-only custom-radio">
-                        <label for="type-quarterly" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Quarterly</label>
-                        
-                        <input type="radio" name="report-type" value="half-yearly" id="type-half-yearly" class="sr-only custom-radio">
-                        <label for="type-half-yearly" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Half-Yearly</label>
-
-                        <input type="radio" name="report-type" value="full-year" id="type-full-year" class="sr-only custom-radio">
-                        <label for="type-full-year" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Full Year</label>
-                    </div>
+             <div>
+                <label for="api-key-input" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Gemini API Key</label>
+                <input type="password" id="api-key-input" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your key...">
+                <div class="flex justify-between items-center mt-2">
+                    <button id="save-api-key" class="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md">Save Key</button>
+                    <span id="api-key-status" class="text-xs text-green-500 hidden">✓ Saved</span>
                 </div>
-
-                <!-- Step 2: Chart Selection -->
-                <div class="step">
-                    <h4 class="font-semibold text-lg mb-2">2. Choose Your Charts</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="bar" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Bar Chart</span></label>
-                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="line" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Line Chart</span></label>
-                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="pie" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Pie Chart</span></label>
-                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="kpi" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Key Metrics</span></label>
-                        <label class="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" name="chart-select" value="table" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked> <span>Data Table</span></label>
-                    </div>
-                </div>
-
-                <!-- Step 3: Color Theme -->
-                 <div class="step">
-                    <h4 class="font-semibold text-lg mb-2">3. Select Chart Color Theme</h4>
-                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <input type="radio" name="color-theme" value="vibrant" id="theme-vibrant" class="sr-only custom-radio" checked>
-                        <label for="theme-vibrant" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Vibrant</label>
-                        
-                        <input type="radio" name="color-theme" value="cool" id="theme-cool" class="sr-only custom-radio">
-                        <label for="theme-cool" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Cool</label>
-
-                        <input type="radio" name="color-theme" value="grayscale" id="theme-grayscale" class="sr-only custom-radio">
-                        <label for="theme-grayscale" class="cursor-pointer text-center p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 dark:hover:border-indigo-400 transition">Black & White</label>
-                    </div>
-                </div>
+                 <a href="https://ai.google.dev/pricing" target="_blank" class="text-xs text-indigo-500 hover:underline mt-2 block">Get a free API key →</a>
             </div>
-            <div class="p-6 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
-                <button id="cancel-modal" class="px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white dark:bg-gray-600 dark:text-gray-200 border border-gray-300 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500">Cancel</button>
-                <button id="generate-dashboard" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Generate Dashboard</button>
+        </div>
+
+        <!-- Chat Panel -->
+        <div id="chat-panel" class="chat-panel fixed bottom-20 right-5 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-2xl flex flex-col h-[600px] transform translate-x-[120%] opacity-0 z-50">
+             <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <img src="https://img.icons8.com/ios/50/ai-generated-text.png" alt="ai-generated-text" class="w-8 h-8"/>
+                    <h3 class="font-bold text-lg text-slate-800 dark:text-white">Chat with the Dashboard</h3>
+                </div>
+                <button id="close-chat" class="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><i class="gg-close"></i></button>
+            </div>
+            <div id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-4">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-700">
+                <div class="flex space-x-2">
+                    <input type="text" id="chat-input" class="w-full px-3 py-2 text-sm text-slate-700 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ask about your data...">
+                    <button id="chat-send" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 flex justify-center items-center">
+                        <img src="https://img.icons8.com/ios-filled/50/FFFFFF/return.png" alt="return" class="w-5 h-5"/>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -194,382 +189,582 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Global State ---
-            let jsonData = [];
-            let processedData = [];
-            let dashboardPreferences = {};
-            let fileName = '';
-            let currentCharts = {};
-            let detectedKeys = {};
-
-            const COLOR_PALETTES = {
-                vibrant: ['#ec4899', '#f97316', '#8b5cf6', '#22c55e', '#3b82f6', '#f43f5e', '#14b8a6'],
-                cool: ['#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a78bfa', '#0ea5e9', '#34d399'],
-                grayscale: ['#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db'],
-            };
-
-            // --- DOM Element References ---
-            const themeToggle = document.getElementById('theme-toggle'),
-                sunIcon = themeToggle.querySelector('.gg-sun'),
-                moonIcon = themeToggle.querySelector('.gg-moon'),
-                fileInput = document.getElementById('file-input'),
-                uploadSection = document.getElementById('upload-section'),
-                dashboardSection = document.getElementById('dashboard-section'),
-                dashboardGrid = document.getElementById('dashboard-grid'),
-                loadingSpinner = document.getElementById('loading-spinner'),
-                loadingText = document.getElementById('loading-text'),
-                errorMessage = document.getElementById('error-message'),
-                errorText = document.getElementById('error-text'),
-                downloadPdfBtn = document.getElementById('download-pdf'),
-                resetButton = document.getElementById('reset-button'),
-                errorResetButton = document.getElementById('error-reset-button'),
-                configModal = document.getElementById('config-modal'),
-                cancelModalBtn = document.getElementById('cancel-modal'),
-                generateDashboardBtn = document.getElementById('generate-dashboard');
-
-            // --- Theme Management ---
-            const applyTheme = (isDark) => {
-                document.documentElement.classList.toggle('dark', isDark);
-                sunIcon.classList.toggle('hidden', isDark);
-                moonIcon.classList.toggle('hidden', !isDark);
-                updateAllChartThemes(isDark);
-            };
-
-            const isDarkMode = localStorage.getItem('theme') === 'dark';
-            applyTheme(isDarkMode);
-
-            themeToggle.addEventListener('click', () => {
-                const isDark = document.documentElement.classList.toggle('dark');
-                localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                applyTheme(isDark);
-            });
-
-            // --- Event Listeners ---
-            fileInput.addEventListener('change', handleFile);
-            resetButton.addEventListener('click', resetUI);
-            errorResetButton.addEventListener('click', resetUI);
-            cancelModalBtn.addEventListener('click', hideModal);
-            generateDashboardBtn.addEventListener('click', generateDashboardFromModal);
+            let allFilesData = [], processedData = [], dashboardPreferences = {}, fileNames = [], currentCharts = {}, detectedKeys = {}, chatHistory = [];
             
-            // --- File Handling & Data Parsing ---
-            function handleFile(event) {
-                const file = event.target.files[0];
-                if (!file) return;
+            const COLOR_PALETTES = {
+                vibrant: { name: 'Vibrant', colors: ['#ec4899', '#f97316', '#8b5cf6', '#22c55e', '#f43f5e', '#14b8a6', '#f59e0b'] },
+                cool: { name: 'Cool', colors: ['#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a78bfa', '#0ea5e9', '#34d399'] },
+                warm: { name: 'Warm', colors: ['#f43f5e', '#f97316', '#facc15', '#eab308', '#ef4444', '#d97706', '#f59e0b'] },
+                earthy: { name: 'Earthy', colors: ['#22c55e', '#84cc16', '#10b981', '#a16207', '#4d7c0f', '#059669', '#65a30d'] },
+                sunset: { name: 'Sunset', colors: ['#f97794', '#623aa2', '#f68084', '#f3b49f', '#f2ebbf', '#d946ef', '#f472b6'] },
+                grayscale: { name: 'Grayscale', colors: ['#374151', '#4b5563', '#6b7280', '#9ca3af', '#d1d5db', '#e5e7eb', '#f3f4f6'] },
+            };
+            const DASHBOARD_TEMPLATES = {
+                business: { name: 'Business', charts: ['ai_summary', 'bar', 'line', 'table'], valueKeywords: ['kpi', 'metric', 'performance', 'value', 'growth'] },
+                sales: { name: 'Sales', charts: ['ai_summary', 'bar', 'line', 'pie', 'table'], valueKeywords: ['sales', 'revenue', 'amount', 'deals', 'profit', 'margin'] },
+                marketing: { name: 'Marketing', charts: ['ai_summary', 'line', 'pie', 'doughnut', 'table'], valueKeywords: ['leads', 'conversions', 'cpl', 'clicks', 'engagement', 'spend'] },
+                finance: { name: 'Finance', charts: ['ai_summary', 'line', 'bar', 'scatter', 'table'], valueKeywords: ['profit', 'expense', 'budget', 'cost', 'assets', 'equity', 'roi'] },
+                hr: { name: 'HR', charts: ['ai_summary', 'pie', 'bar', 'doughnut', 'table'], valueKeywords: ['headcount', 'diversity', 'turnover', 'hires', 'satisfaction', 'salary'] },
+                it: { name: 'IT', charts: ['ai_summary', 'bar', 'line', 'radar', 'table'], valueKeywords: ['tickets', 'uptime', 'cost', 'bugs', 'sla', 'incidents'] },
+                website: { name: 'Web Analytics', charts: ['ai_summary', 'line', 'bar', 'polarArea', 'table'], valueKeywords: ['sessions', 'users', 'pageviews', 'bounce', 'duration'] },
+                education: { name: 'Education', charts: ['ai_summary', 'pie', 'bar', 'table'], valueKeywords: ['students', 'grades', 'score', 'attendance', 'enrollment'] }
+            };
+            const ALL_CHART_TYPES = {
+                ai_summary: { name: "AI Summary", type: 'special' },
+                bar: { name: "Bar Chart", type: 'chart' },
+                line: { name: "Line Chart", type: 'chart' },
+                pie: { name: "Pie Chart", type: 'chart' },
+                doughnut: { name: "Doughnut", type: 'chart' },
+                polarArea: { name: "Polar Area", type: 'chart' },
+                radar: { name: "Radar Chart", type: 'chart' },
+                scatter: { name: "Scatter Plot", type: 'chart' },
+                table: { name: "Data Table", type: 'special' }
+            };
 
-                fileName = file.name;
-                showLoading(true, 'Reading...');
-                hideError();
+            const REPORT_PERIODS = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', quarterly: 'Quarterly', 'half-yearly': 'Half-Yearly', 'full-year': 'Full Year' };
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                        const sheetName = workbook.SheetNames[0];
-                        const worksheet = workbook.Sheets[sheetName];
-                        jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+            // --- DOM Elements ---
+            const dom = {};
 
-                        if (jsonData.length === 0) throw new Error("The uploaded file is empty or unreadable.");
-                        
-                        detectedKeys = autoDetectColumns(jsonData);
-                        if (!detectedKeys.dateKey || !detectedKeys.valueKey) {
-                            throw new Error("Could not automatically detect columns. Please ensure your file has headers like 'Date', 'Sales', 'Timestamp', 'Temperature', etc.");
-                        }
-                        
-                        showModal();
-
-                    } catch (err) {
-                        handleProcessingError(err, "Failed to process the file.");
-                    } finally {
-                        showLoading(false);
-                    }
-                };
-                reader.onerror = () => handleProcessingError(new Error("FileReader error"), "Could not read the file.");
-                reader.readAsArrayBuffer(file);
+            const queryDomElements = () => {
+                Object.assign(dom, {
+                    themeToggle: document.getElementById('theme-toggle'), sunIcon: document.querySelector('.gg-sun'), moonIcon: document.querySelector('.gg-moon'),
+                    apiKeyInput: document.getElementById('api-key-input'), saveApiKeyBtn: document.getElementById('save-api-key'), apiKeyStatus: document.getElementById('api-key-status'),
+                    fileInput: document.getElementById('file-input'), fileListDisplay: document.getElementById('file-list'),
+                    uploadSection: document.getElementById('upload-section'), dashboardContainer: document.getElementById('dashboard-container'), dashboardGrid: document.getElementById('dashboard-grid'), dashboardTitle: document.getElementById('dashboard-title'),
+                    loadingSpinner: document.getElementById('loading-spinner'), loadingText: document.getElementById('loading-text'),
+                    errorMessage: document.getElementById('error-message'), errorText: document.getElementById('error-text'), errorResetBtn: document.getElementById('error-reset-button'),
+                    newReportButton: document.getElementById('new-report-button'), downloadPdfBtn: document.getElementById('download-pdf'),
+                    dashboardControls: document.getElementById('dashboard-controls'),
+                    dashboardTypeSelector: document.getElementById('dashboard-type-selector'), reportPeriodSelector: document.getElementById('report-period-selector'), colorThemeSelector: document.getElementById('color-theme-selector'), chartSelector: document.getElementById('chart-selector'),
+                    customColorContainer: document.getElementById('custom-color-container'),
+                    chatPanel: document.getElementById('chat-panel'), chatHistory: document.getElementById('chat-history'), chatInput: document.getElementById('chat-input'), chatSendBtn: document.getElementById('chat-send'),
+                    openChatBtn: document.getElementById('open-chat-button'), closeChatBtn: document.getElementById('close-chat'),
+                    settingsPanel: document.getElementById('settings-panel'), settingsButton: document.getElementById('settings-button'),
+                });
             }
 
-            /**
-             * A more robust date parsing utility.
-             * @param {any} dateInput - The value from the spreadsheet cell.
-             * @returns {Date|null} A valid Date object or null.
-             */
-            function parseDate(dateInput) {
-                if (dateInput instanceof Date && !isNaN(dateInput)) {
-                    return dateInput; // Already a valid date from SheetJS
+            // --- Initial Setup ---
+            const init = () => {
+                queryDomElements();
+                const isDarkMode = localStorage.getItem('theme') === 'dark';
+                applyTheme(isDarkMode);
+                loadApiKey();
+                populateDashboardControls();
+                attachEventListeners();
+            };
+
+            const populateDashboardControls = () => {
+                const createRadio = (group, key, val, i, checkedIndex = 0) => `<input type="radio" name="${group}" value="${key}" id="${group}-${key}" class="sr-only control-radio" ${i===checkedIndex ? 'checked': ''}><label for="${group}-${key}" class="cursor-pointer text-center font-medium text-sm p-2 border-2 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 transition block">${val}</label>`;
+                const createCheckbox = (key, val, checked) => `<input type="checkbox" name="chart-type" value="${key}" id="chart-type-${key}" class="sr-only control-checkbox" ${checked ? 'checked' : ''}><label for="chart-type-${key}" class="cursor-pointer text-center font-medium text-sm p-2 border-2 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded-lg hover:border-green-400 dark:hover:border-green-500 transition block">${val}</label>`;
+                
+                if (dom.dashboardTypeSelector) dom.dashboardTypeSelector.innerHTML = Object.entries(DASHBOARD_TEMPLATES).map(([key, val], i) => createRadio('dashboard-type', key, val.name, i, 0)).join('');
+                if (dom.reportPeriodSelector) dom.reportPeriodSelector.innerHTML = Object.entries(REPORT_PERIODS).map(([key, val], i) => createRadio('report-period', key, val, i, 2)).join('');
+                if (dom.colorThemeSelector) dom.colorThemeSelector.innerHTML = Object.entries(COLOR_PALETTES).map(([key, val], i) => createRadio('color-theme', key, val.name, i, 0)).join('');
+                if (dom.chartSelector) dom.chartSelector.innerHTML = Object.entries(ALL_CHART_TYPES).map(([key, val]) => createCheckbox(key, val.name, DASHBOARD_TEMPLATES.business.charts.includes(key))).join('');
+
+                // Populate custom color pickers
+                dom.customColorContainer.innerHTML = '';
+                COLOR_PALETTES.vibrant.colors.forEach(color => {
+                    const colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.value = color;
+                    colorInput.className = 'p-0 w-8 h-8 rounded border-none cursor-pointer';
+                    dom.customColorContainer.appendChild(colorInput);
+                });
+            };
+
+            const attachEventListeners = () => {
+                if (dom.themeToggle) dom.themeToggle.addEventListener('click', () => {
+                    const isDark = !document.documentElement.classList.contains('dark');
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                    applyTheme(isDark);
+                });
+                if (dom.fileInput) dom.fileInput.addEventListener('change', handleFiles);
+                if (dom.newReportButton) dom.newReportButton.addEventListener('click', resetUI);
+                if (dom.errorResetBtn) dom.errorResetBtn.addEventListener('click', resetUI);
+                if (dom.saveApiKeyBtn) dom.saveApiKeyBtn.addEventListener('click', saveApiKey);
+                if (dom.openChatBtn) dom.openChatBtn.addEventListener('click', () => togglePanel(dom.chatPanel, true));
+                if (dom.closeChatBtn) dom.closeChatBtn.addEventListener('click', () => togglePanel(dom.chatPanel, false));
+                if (dom.settingsButton) dom.settingsButton.addEventListener('click', () => togglePanel(dom.settingsPanel));
+                if (dom.chatSendBtn) dom.chatSendBtn.addEventListener('click', handleChatMessage);
+                if (dom.chatInput) dom.chatInput.addEventListener('keypress', e => e.key === 'Enter' && handleChatMessage());
+                if (dom.downloadPdfBtn) dom.downloadPdfBtn.addEventListener('click', handleDownloadPdf);
+                if(dom.dashboardControls) dom.dashboardControls.addEventListener('change', handleControlsChange);
+            };
+            
+            // --- Theme & API Key Management ---
+            const applyTheme = (isDark) => {
+                document.documentElement.classList.toggle('dark', isDark);
+                if(dom.sunIcon) dom.sunIcon.classList.toggle('hidden', isDark);
+                if(dom.moonIcon) dom.moonIcon.classList.toggle('hidden', !isDark);
+                if(Object.keys(currentCharts).length > 0) {
+                    updateAllChartThemes(isDark);
                 }
-                if (typeof dateInput === 'string' || typeof dateInput === 'number') {
-                    const parsedDate = new Date(dateInput);
-                    if (!isNaN(parsedDate)) {
-                        return parsedDate;
-                    }
+            };
+
+            const saveApiKey = () => {
+                const key = dom.apiKeyInput.value.trim();
+                if (key) {
+                    localStorage.setItem('geminiApiKey', key);
+                    dom.apiKeyStatus.classList.remove('hidden');
+                    dom.apiKeyStatus.textContent = '✓ Saved';
+                    setTimeout(() => dom.apiKeyStatus.classList.add('hidden'), 2000);
+                }
+            };
+            
+            const loadApiKey = () => {
+                const key = localStorage.getItem('geminiApiKey');
+                if (key) {
+                    dom.apiKeyInput.value = key;
+                    dom.apiKeyStatus.classList.remove('hidden');
+                    dom.apiKeyStatus.textContent = '✓ Loaded';
+                }
+            };
+
+            const getApiKey = () => localStorage.getItem('geminiApiKey');
+            
+            // --- UI/Panel Controls ---
+            const togglePanel = (panel, forceOpen = null) => {
+                const isSettings = panel.id.includes('settings');
+                const transformClass = isSettings ? 'translate-y-[120%]' : 'translate-x-[120%]'
+                const isVisible = !panel.classList.contains(transformClass);
+                const shouldOpen = forceOpen !== null ? forceOpen : !isVisible;
+
+                panel.classList.toggle(transformClass, !shouldOpen);
+                if(isSettings) panel.classList.toggle('translate-y-0', shouldOpen);
+                else panel.classList.toggle('translate-x-0', shouldOpen);
+                
+                panel.classList.toggle('opacity-0', !shouldOpen);
+                panel.classList.toggle('opacity-100', shouldOpen);
+            };
+
+
+            // --- File Processing ---
+            function handleFiles(event) {
+                const files = event.target.files;
+                if (!files.length) return;
+                showLoading(true, 'Reading files...');
+                hideError();
+                fileNames = Array.from(files).map(f => f.name);
+                
+                Promise.all(Array.from(files).map(file => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        try {
+                            const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array', cellDates: true });
+                            resolve(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false }));
+                        } catch(err) { reject(err); }
+                    };
+                    reader.onerror = err => reject(err);
+                    reader.readAsArrayBuffer(file);
+                }))).then(results => {
+                    allFilesData = results.flat().map(row => Object.fromEntries(Object.entries(row).map(([k, v]) => [k.toLowerCase(), v])));
+                    if (allFilesData.length === 0) throw new Error("Files are empty or unreadable.");
+                    initializeDashboard();
+                }).catch(err => handleProcessingError(err, "Failed to process files."))
+                  .finally(() => showLoading(false));
+            }
+
+            function parseDate(d) {
+                if (d instanceof Date && !isNaN(d)) return d;
+                if (typeof d === 'string' || typeof d === 'number') {
+                    const p = new Date(d);
+                    if (!isNaN(p)) return p;
                 }
                 return null;
             }
             
-            function autoDetectColumns(data) {
-                if (!data || data.length === 0) return { dateKey: null, valueKey: null };
-
+            function autoDetectColumns(data, hints = []) {
+                if (!data || data.length === 0) return {};
                 const headers = Object.keys(data[0]);
-                const dateKeywords = ['date', 'time', 'day', 'timestamp', 'period', 'when'];
-                const valueKeywords = ['sales', 'revenue', 'amount', 'value', 'quantity', 'price', 'temp', 'level', 'stock', 'count', 'score', 'reading', 'humidity'];
-                const nonValueKeywords = ['id', 'identifier'];
-                const MAX_ROWS_TO_SCAN = Math.min(10, data.length);
+                if (headers.length < 2) return {};
 
-                let potentialDateKeys = [];
-                let potentialValueKeys = [];
+                const scores = {};
+                const dateKW = ['date', 'time', 'day', 'timestamp', 'period', 'when', 'orderdate', 'shipdate', 'created_at', 'updated_at'];
+                const valueKW = [...hints, 'sales', 'revenue', 'amount', 'value', 'quantity', 'price', 'temp', 'level', 'stock', 'count', 'score', 'reading', 'humidity', 'total', 'metric', 'measurement', 'units', 'salesamount'];
+                const nonValueKW = ['id', 'identifier', 'year', 'month'];
 
-                // --- Pass 1: Score columns based on header keywords ---
                 headers.forEach(h => {
-                    const hLower = h.toLowerCase();
-                    if (dateKeywords.some(k => hLower.includes(k))) {
-                        potentialDateKeys.push({ key: h, score: 10 });
+                    scores[h] = { dateCount: 0, numCount: 0, headerScore: 0 };
+                    const hL = h.toLowerCase().replace(/[^a-z0-9]/gi, '');
+                    if (dateKW.some(k => hL.includes(k))) {
+                        scores[h].headerScore += 10;
                     }
-                    if (valueKeywords.some(k => hLower.includes(k)) && !nonValueKeywords.some(k => hLower.includes(k))) {
-                        potentialValueKeys.push({ key: h, score: 10 });
+                    if (valueKW.some(k => hL.includes(k)) && !nonValueKW.some(k => hL.includes(k))) {
+                        scores[h].headerScore += 10;
                     }
                 });
 
-                // --- Pass 2: Score all columns based on content type from multiple rows ---
-                const columnScores = {};
-                headers.forEach(h => {
-                    columnScores[h] = { date: 0, number: 0 };
-                });
-
-                for (let i = 0; i < MAX_ROWS_TO_SCAN; i++) {
-                    const row = data[i];
-                    if (!row) continue;
+                const rowsToScan = Math.min(50, data.length);
+                for (let i = 0; i < rowsToScan; i++) {
+                    if (!data[i]) continue;
                     for (const h of headers) {
-                        const cellValue = row[h];
-                        if (cellValue !== null && cellValue !== undefined && cellValue !== '') {
-                            if (parseDate(cellValue)) {
-                                columnScores[h].date++;
+                        const val = data[i][h];
+                        if (val !== null && val !== undefined && val !== '') {
+                            if (parseDate(val)) {
+                                scores[h].dateCount++;
                             }
-                            if (!isNaN(parseFloat(cellValue)) && isFinite(cellValue)) {
-                                columnScores[h].number++;
+                            if (!isNaN(parseFloat(val)) && isFinite(val)) {
+                                scores[h].numCount++;
                             }
                         }
                     }
                 }
-                
-                // Add content scores to keyword-based potentials
-                potentialDateKeys.forEach(k => k.score += columnScores[k.key].date);
-                potentialValueKeys.forEach(k => k.score += columnScores[k.key].number);
-                
-                // Also consider non-keyword columns that are strongly typed
+
                 headers.forEach(h => {
-                    if (!potentialDateKeys.some(k => k.key === h) && columnScores[h].date > MAX_ROWS_TO_SCAN / 2) {
-                        potentialDateKeys.push({ key: h, score: columnScores[h].date });
-                    }
-                     if (!potentialValueKeys.some(k => k.key === h) && columnScores[h].number > MAX_ROWS_TO_SCAN / 2) {
-                        potentialValueKeys.push({ key: h, score: columnScores[h].number });
-                    }
+                    scores[h].finalDateScore = scores[h].headerScore + (scores[h].dateCount / rowsToScan) * 100;
+                    scores[h].finalValueScore = scores[h].headerScore + (scores[h].numCount / rowsToScan) * 100 - (scores[h].dateCount / rowsToScan) * 50;
                 });
 
+                const sortedByDate = headers.slice().sort((a, b) => scores[b].finalDateScore - scores[a].finalDateScore);
+                let dateKey = scores[sortedByDate[0]].finalDateScore > 10 ? sortedByDate[0] : null;
 
-                // --- Final Decision ---
-                potentialDateKeys.sort((a, b) => b.score - a.score);
-                potentialValueKeys.sort((a, b) => b.score - a.score);
-
-                let dateKey = potentialDateKeys.length > 0 && potentialDateKeys[0].score > 0 ? potentialDateKeys[0].key : null;
-                let valueKey = null;
-
-                // Find the best value key that is not the same as the date key
-                for (const vk of potentialValueKeys) {
-                    if (vk.score > 0 && vk.key !== dateKey) {
-                        valueKey = vk.key;
-                        break;
-                    }
+                const potentialValueColumns = headers.filter(h => h !== dateKey);
+                const sortedByValue = potentialValueColumns.sort((a, b) => scores[b].finalValueScore - scores[a].finalValueScore);
+                let valueKey = sortedByValue.length > 0 && scores[sortedByValue[0]].finalValueScore > 10 ? sortedByValue[0] : null;
+                
+                // Fallback if primary detection fails
+                if (!dateKey || !valueKey) {
+                    const sortedByDateCount = headers.slice().sort((a, b) => scores[b].dateCount - scores[a].dateCount);
+                    const fallbackDateKey = scores[sortedByDateCount[0]].dateCount > 0 ? sortedByDateCount[0] : null;
+                    
+                    const remainingCols = headers.filter(h => h !== fallbackDateKey);
+                    const sortedByNumCount = remainingCols.sort((a, b) => scores[b].numCount - scores[a].numCount);
+                    const fallbackValueKey = sortedByNumCount.length > 0 && scores[sortedByNumCount[0]].numCount > 0 ? sortedByNumCount[0] : null;
+                    
+                    dateKey = dateKey || fallbackDateKey;
+                    valueKey = valueKey || fallbackValueKey;
                 }
                 
-                // Fallback if no value key was found yet (e.g., it was the same as dateKey)
-                if (!valueKey && potentialValueKeys.length > 1 && potentialValueKeys[0].key === dateKey) {
-                    valueKey = potentialValueKeys[1].key
-                }
-
-
                 return { dateKey, valueKey };
             }
 
-            // --- Modal and Configuration ---
-            function showModal() {
-                configModal.classList.remove('hidden');
-                setTimeout(() => {
-                    configModal.querySelector('.modal-container').classList.remove('scale-95');
-                    configModal.classList.remove('opacity-0');
-                }, 10);
+            // --- Main Dashboard Logic ---
+            function initializeDashboard() {
+                dom.uploadSection.classList.add('hidden');
+                dom.dashboardContainer.classList.remove('hidden');
+                dom.downloadPdfBtn.classList.remove('hidden');
+                if (getApiKey()) {
+                    dom.openChatBtn.classList.remove('hidden');
+                    addInitialChatMessage();
+                }
+                regenerateDashboard();
             }
             
-            function hideModal() {
-                configModal.querySelector('.modal-container').classList.add('scale-95');
-                configModal.classList.add('opacity-0');
-                setTimeout(() => configModal.classList.add('hidden'), 300);
-            }
-
-            function generateDashboardFromModal() {
-                hideModal();
-                showLoading(true, 'Analyzing...');
-                setTimeout(() => { 
-                     dashboardPreferences = {
-                        reportType: document.querySelector('input[name="report-type"]:checked').value,
-                        charts: Array.from(document.querySelectorAll('input[name="chart-select"]:checked')).map(cb => cb.value),
-                        colors: COLOR_PALETTES[document.querySelector('input[name="color-theme"]:checked').value]
-                    };
-                    processDataAndBuildDashboard();
-                }, 300);
-            }
-
-            // --- Data Processing and Dashboard Generation ---
-            function processDataAndBuildDashboard() {
-                loadingText.textContent = 'Processing...';
-
-                processedData = jsonData.map((row, index) => {
-                    let date = parseDate(row[detectedKeys.dateKey]);
-                    if (!date) return null;
-                    const value = parseFloat(row[detectedKeys.valueKey]);
-                    return !isNaN(value) ? { date, value, originalIndex: index } : null;
-                }).filter(Boolean);
-
-                if (processedData.length === 0) {
-                    handleProcessingError(new Error("No valid data."), "No valid data rows with a readable date and numeric value were found.");
-                    return;
+            function handleControlsChange(event) {
+                const target = event.target;
+                if (target.name === 'dashboard-type') {
+                    const type = target.value;
+                    const template = DASHBOARD_TEMPLATES[type];
+                    const chartCheckboxes = dom.chartSelector.querySelectorAll('input[name="chart-type"]');
+                    chartCheckboxes.forEach(cb => {
+                        cb.checked = template.charts.includes(cb.value);
+                    });
+                }
+                if (target.name === 'color-theme') {
+                    const themeColors = COLOR_PALETTES[target.value].colors;
+                    const colorInputs = dom.customColorContainer.querySelectorAll('input[type="color"]');
+                    colorInputs.forEach((input, i) => {
+                        if (themeColors[i]) {
+                            input.value = themeColors[i];
+                        }
+                    });
+                }
+                if(target.type === 'color') {
+                    const currentRadio = dom.colorThemeSelector.querySelector('input:checked');
+                    if(currentRadio) currentRadio.checked = false;
                 }
                 
-                processedData.sort((a,b) => a.date - b.date);
+                regenerateDashboard();
+            }
+
+            function regenerateDashboard() {
+                showLoading(true, 'Updating dashboard...');
                 
+                setTimeout(() => { 
+                    const type = document.querySelector('input[name="dashboard-type"]:checked').value;
+                    const template = DASHBOARD_TEMPLATES[type];
+                    
+                    detectedKeys = autoDetectColumns(allFilesData, template.valueKeywords);
+                    if (!detectedKeys.dateKey || !detectedKeys.valueKey) {
+                        handleProcessingError(new Error("Column detection failed."), "Could not automatically detect date and value columns for this dashboard type. Please select another type or check your file.");
+                        return;
+                    }
+
+                    const selectedCharts = Array.from(dom.chartSelector.querySelectorAll('input:checked')).map(cb => cb.value);
+                    const selectedColorTheme = dom.colorThemeSelector.querySelector('input:checked');
+                    let finalColors;
+                    if(selectedColorTheme){
+                        finalColors = COLOR_PALETTES[selectedColorTheme.value].colors;
+                    } else {
+                        finalColors = Array.from(dom.customColorContainer.querySelectorAll('input[type="color"]')).map(input => input.value);
+                    }
+
+                    dashboardPreferences = {
+                        template: template,
+                        reportType: document.querySelector('input[name="report-period"]:checked').value,
+                        colors: finalColors,
+                        charts: selectedCharts
+                    };
+                    
+                    processDataAndBuildDashboard();
+                }, 100);
+            }
+
+
+            function processDataAndBuildDashboard() {
+                dom.loadingText.textContent = 'Processing data...';
+                processedData = allFilesData.map((row, i) => {
+                    const date = parseDate(row[detectedKeys.dateKey]), val = parseFloat(row[detectedKeys.valueKey]);
+                    return date && !isNaN(val) ? { date, value: val, originalIndex: i } : null;
+                }).filter(Boolean).sort((a,b) => a.date - b.date);
+
+                if (processedData.length === 0) {
+                    handleProcessingError(new Error("No valid data."), "No processable data rows found for the selected columns.");
+                    return;
+                }
                 refreshDashboard();
                 showLoading(false);
             }
 
             function refreshDashboard() {
-                loadingText.textContent = 'Aggregating...';
-                const dateRangeDays = processedData.length > 1 ? (processedData[processedData.length-1].date - processedData[0].date) / (1000 * 3600 * 24) : 0;
-
-                let effectiveReportType = dashboardPreferences.reportType;
-                if (effectiveReportType === 'full-year' && dateRangeDays < 180) effectiveReportType = 'half-yearly';
-                if (effectiveReportType === 'half-yearly' && dateRangeDays < 90) effectiveReportType = 'quarterly';
-                if (effectiveReportType === 'quarterly' && dateRangeDays < 30) effectiveReportType = 'daily';
+                dom.loadingText.textContent = 'Aggregating data...';
+                const range = processedData.length > 1 ? (processedData[processedData.length-1].date - processedData[0].date) / 864e5 : 0;
+                let type = dashboardPreferences.reportType;
+                if (type === 'full-year' && range < 180) type = 'half-yearly';
+                if (type === 'half-yearly' && range < 90) type = 'quarterly';
+                if (type === 'quarterly' && range < 30) type = 'monthly';
+                if (type === 'monthly' && range < 7) type = 'daily';
                 
-                const dataAggregates = aggregateData(processedData, effectiveReportType);
+                const aggregates = aggregateData(processedData, type);
                 
-                loadingText.textContent = 'Building...';
-
-                uploadSection.classList.add('hidden');
-                dashboardSection.classList.remove('hidden');
-                document.getElementById('dashboard-title').textContent = `${fileName} - ${effectiveReportType.replace('-',' ').toUpperCase()} Report`;
-
-                renderDashboard(dataAggregates, dashboardPreferences.charts);
-            }
-            
-            function aggregateData(data, reportType) {
-                const aggregates = { byPeriod: {}, totalValue: 0, recordCount: data.length };
-
-                data.forEach(item => {
-                    aggregates.totalValue += item.value;
-                    let periodKey;
-                    const d = item.date;
-
-                    switch(reportType) {
-                        case 'daily':
-                            periodKey = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-                            break;
-                        case 'quarterly':
-                            periodKey = `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`;
-                            break;
-                        case 'half-yearly':
-                            periodKey = `${d.getUTCMonth() < 6 ? 'H1' : 'H2'} ${d.getUTCFullYear()}`;
-                            break;
-                        case 'full-year':
-                            periodKey = String(d.getUTCFullYear());
-                            break;
-                    }
-                    aggregates.byPeriod[periodKey] = (aggregates.byPeriod[periodKey] || 0) + item.value;
-                });
-                return aggregates;
-            }
-
-            // --- Chart and Dashboard Rendering ---
-            function renderDashboard(aggregates, chartsToRender) {
-                destroyCharts();
-                dashboardGrid.innerHTML = '';
+                dom.loadingText.textContent = 'Building dashboard...';
                 
-                let cardDelay = 0;
-                const addCard = (content, fullWidth = false) => {
-                    const card = document.createElement('div');
-                    card.className = `dashboard-card bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md ${fullWidth ? 'lg:col-span-2 2xl:col-span-3' : ''}`;
-                    card.style.animationDelay = `${cardDelay * 100}ms`;
-                    card.innerHTML = content;
-                    dashboardGrid.appendChild(card);
-                    cardDelay++;
+                if (fileNames.length > 1) {
+                    dom.dashboardTitle.textContent = `Dashboard for ${fileNames.length} files`;
+                } else if (fileNames.length === 1) {
+                    dom.dashboardTitle.textContent = `${fileNames[0]} - ${REPORT_PERIODS[type]} Report`;
                 }
 
-                const renderChartCard = (type, title) => {
-                     addCard(`
-                        <h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">${title}</h3>
-                        <div class="chart-container"><canvas id="chart-${type}"></canvas></div>
-                    `);
-                };
 
-                chartsToRender.forEach(chartType => {
-                    switch (chartType) {
-                        case 'bar': renderChartCard('bar', `Total ${detectedKeys.valueKey} by Period`); break;
-                        case 'line': renderChartCard('line', `${detectedKeys.valueKey} Trend Over Time`); break;
-                        case 'pie': renderChartCard('pie', `${detectedKeys.valueKey} Breakdown by Period`); break;
-                        case 'kpi':
-                             const totalValFmt = aggregates.totalValue.toLocaleString('en-US', { maximumFractionDigits: 2 });
-                             const avgValFmt = (aggregates.totalValue / aggregates.recordCount).toLocaleString('en-US', { maximumFractionDigits: 2 });
-                             addCard(`
-                                <h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">Key Metrics</h3>
-                                <div class="grid grid-cols-2 gap-4 text-center h-full content-around">
-                                     <div><p class="text-sm text-gray-500 dark:text-gray-400">Total ${detectedKeys.valueKey}</p><p class="text-2xl lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">${totalValFmt}</p></div>
-                                     <div><p class="text-sm text-gray-500 dark:text-gray-400">Data Points</p><p class="text-2xl lg:text-3xl font-bold text-indigo-600 dark:text-indigo-400">${aggregates.recordCount.toLocaleString()}</p></div>
-                                     <div class="col-span-2"><p class="text-sm text-gray-500 dark:text-gray-400">Average ${detectedKeys.valueKey}</p><p class="text-xl lg:text-2xl font-semibold text-gray-700 dark:text-gray-300">${avgValFmt}</p></div>
-                                </div>
-                             `);
-                             break;
+                renderDashboard(aggregates, dashboardPreferences.charts);
+            }
+            
+            function getWeekStartDate(d) {
+                const date = new Date(d);
+                const day = date.getDay();
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+                return new Date(date.setDate(diff));
+            }
+
+            function aggregateData(data, type) {
+                const aggs = { byPeriod: {}, totalValue: 0, recordCount: data.length };
+                data.forEach(item => {
+                    aggs.totalValue += item.value;
+                    let d = item.date, key;
+                    switch(type) {
+                        case 'daily': key = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); break;
+                        case 'weekly':
+                            const weekStart = getWeekStartDate(d);
+                            key = `Week of ${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+                            break;
+                        case 'monthly': key = `${d.toLocaleString('default', { month: 'short' })} ${d.getUTCFullYear()}`; break;
+                        case 'quarterly': key = `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`; break;
+                        case 'half-yearly': key = `${d.getUTCMonth() < 6 ? 'H1' : 'H2'} ${d.getUTCFullYear()}`; break;
+                        case 'full-year': key = String(d.getUTCFullYear()); break;
+                    }
+                    if (!aggs.byPeriod[key]) aggs.byPeriod[key] = { value: 0, date: d };
+                    aggs.byPeriod[key].value += item.value;
+                });
+                return aggs;
+            }
+
+            // --- AI & Gemini API Functions ---
+            async function callGeminiAPI(prompt, elementToUpdate, loadingMessage) {
+                const apiKey = getApiKey();
+                if (!apiKey) {
+                    if (elementToUpdate) elementToUpdate.innerHTML = `<p class="text-amber-600 dark:text-amber-500">Please enter a valid Gemini API key to use AI features.</p>`;
+                    return null;
+                }
+                
+                if (elementToUpdate && loadingMessage) elementToUpdate.innerHTML = `<div class="flex items-center justify-center h-full text-slate-600 dark:text-slate-300"><div class="spinner"></div><span class="ml-2">${loadingMessage}</span></div>`;
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+                try {
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
+                    
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        const errorBody = await response.json();
+                        throw new Error(`API request failed: ${response.status} ${response.statusText}. Details: ${JSON.stringify(errorBody)}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else if (result.candidates?.[0]?.finishReason) {
+                         throw new Error(`AI generation stopped. Reason: ${result.candidates[0].finishReason}.`);
+                    }
+                    else { throw new Error("No content received from API."); }
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    console.error('Gemini API Error:', error);
+                    let errorMessage = `Could not generate AI response. ${error.message}`;
+                    if (error.name === 'AbortError') {
+                        errorMessage = "The AI analysis timed out after 90 seconds.";
+                    }
+                    if (elementToUpdate) elementToUpdate.innerHTML = `<p class="text-red-600 dark:text-red-500">${errorMessage}</p>`;
+                    return null;
+                }
+            }
+            
+            async function generateGeminiInsights(aggregates) {
+                const summaryDiv = document.getElementById('ai-summary-content');
+                if (!summaryDiv) return;
+                const dataForPrompt = JSON.stringify(Object.fromEntries(Object.entries(aggregates.byPeriod).map(([k, v]) => [k, v.value]).slice(0, 100)));
+                const prompt = `Act as an expert data analyst for a non-profit. Analyze the following time-series data which represents "${detectedKeys.valueKey}". Data: ${dataForPrompt}. Provide a concise, insightful summary in 2-3 sentences. Highlight the total value, best/worst periods, and the overall trend (e.g., growing, declining, stable). Be direct and use bullet points for key takeaways.`;
+                
+                const text = await callGeminiAPI(prompt, summaryDiv, 'Generating insights...');
+                if (text) {
+                    summaryDiv.innerHTML = `<p>${text.replace(/\n/g, '</p><p>').replace(/\*/g, '')}</p>`;
+                }
+            }
+
+            async function handleChatMessage() {
+                const input = dom.chatInput;
+                const question = input.value.trim();
+                if (!question) return;
+
+                addMessageToChat('user', question);
+                input.value = '';
+                
+                const dataSummary = JSON.stringify(Object.fromEntries(Object.entries(aggregateData(processedData, dashboardPreferences.reportType).byPeriod).map(([k, v]) => [k, v.value])));
+                const historyPrompt = chatHistory.map(m => `${m.role}: ${m.content}`).join('\n');
+                const prompt = `You are a helpful data analyst. Your name is InsightBot. Answer questions based ONLY on the data provided and our conversation history. Data: ${dataSummary}. History: \n${historyPrompt}\nQuestion: ${question}`;
+
+                addMessageToChat('bot', '<div class="spinner"></div>');
+
+                const text = await callGeminiAPI(prompt, dom.chatHistory.lastChild.querySelector('.chat-bubble'), '');
+                if (text) {
+                    dom.chatHistory.lastChild.querySelector('.chat-bubble').innerHTML = `<p>${text.replace(/\n/g, '</p><p>').replace(/\*/g, '')}</p>`;
+                    chatHistory.push({ role: 'assistant', content: text });
+                } else {
+                    const errorBubble = dom.chatHistory.lastChild.querySelector('.chat-bubble');
+                    if(errorBubble.innerHTML.includes('spinner')) {
+                         errorBubble.innerHTML = `<p class="text-red-500">Sorry, I couldn't get a response.</p>`
+                    }
+                }
+            }
+            
+            function addInitialChatMessage() {
+                 if (chatHistory.length === 0) {
+                    const welcomeMessage = `Hello! I'm your dashboard assistant. Here's what you can ask me:
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>What was the total ${detectedKeys.valueKey || 'value'}?</li>
+                        <li>Which period had the highest ${detectedKeys.valueKey || 'value'}?</li>
+                        <li>Summarize the data for me.</li>
+                    </ul>`;
+                    addMessageToChat('bot', welcomeMessage);
+                 }
+            }
+
+            function addMessageToChat(role, content) {
+                const messageWrapper = document.createElement('div');
+                messageWrapper.className = `flex items-start gap-2.5 ${role === 'user' ? 'justify-end' : ''}`;
+                
+                const icon = role === 'user' ? '<div class="flex-shrink-0"><i class="gg-user text-white bg-indigo-500 rounded-full p-2"></i></div>' : '<div class="flex-shrink-0"><img src="https://img.icons8.com/ios/50/ai-generated-text.png" alt="bot icon" class="w-8 h-8"/></div>';
+                const bubbleClass = role === 'user' ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-700';
+
+                messageWrapper.innerHTML = `
+                    ${role === 'bot' ? icon : ''}
+                    <div class="flex flex-col gap-1 w-full max-w-xs">
+                        <div class="chat-bubble leading-1.5 p-3 rounded-e-xl rounded-es-xl ${bubbleClass} text-slate-800 dark:text-slate-200">
+                           ${content}
+                        </div>
+                    </div>
+                     ${role === 'user' ? icon : ''}
+                `;
+                dom.chatHistory.appendChild(messageWrapper);
+                dom.chatHistory.scrollTop = dom.chatHistory.scrollHeight;
+                if(role === 'user') {
+                    chatHistory.push({ role: 'user', content: content });
+                }
+            }
+
+            // --- UI Rendering ---
+            function renderDashboard(aggregates, chartsToRender) {
+                destroyCharts();
+                dom.dashboardGrid.innerHTML = '';
+                
+                const addCard = (content, fullWidth = false, customId = '', customClass = '') => {
+                    const card = document.createElement('div');
+                    card.className = `dashboard-card bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-lg shadow-md ${fullWidth ? 'lg:col-span-2 2xl:col-span-3' : ''} ${customClass}`;
+                    if(customId) card.id = customId;
+                    dom.dashboardGrid.appendChild(card);
+                    card.innerHTML = content;
+                }
+                const renderChartCard = (type, title) => addCard(`<h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">${title}</h3><div class="chart-container"><canvas id="chart-${type}"></canvas></div>`, false, `chart-card-${type}`);
+                
+                chartsToRender.forEach(type => {
+                    const chartInfo = ALL_CHART_TYPES[type];
+                    if(!chartInfo) return;
+
+                    switch (type) {
+                        case 'ai_summary': addCard(`<h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">✨ AI-Generated Summary</h3><div class="text-sm text-slate-700 dark:text-slate-300" id="ai-summary-content"></div>`, true, 'ai-summary-card', 'ai-insights-card'); break;
                         case 'table':
-                             let tableHTML = `<h3 class="font-semibold text-lg mb-4 text-gray-900 dark:text-white">Editable Data Table</h3><div class="overflow-auto max-h-96"><table class="w-full text-sm text-left editable-table"><thead><tr class="bg-gray-50 dark:bg-gray-700"><th class="px-3 py-2">${detectedKeys.dateKey}</th><th class="px-3 py-2">${detectedKeys.valueKey}</th></tr></thead><tbody>`;
-                             processedData.forEach(row => {
-                                 tableHTML += `<tr><td class="px-3 py-2" data-index="${row.originalIndex}" data-key="${detectedKeys.dateKey}">${row.date.toLocaleDateString()}</td><td class="px-3 py-2" contenteditable="true" data-index="${row.originalIndex}" data-key="${detectedKeys.valueKey}">${row.value}</td></tr>`;
-                             });
+                             let tableHTML = `<h3 class="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Editable Data Table</h3><div class="overflow-auto max-h-96"><table class="w-full text-sm text-left editable-table"><thead><tr class="bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300"><th class="px-3 py-2">${detectedKeys.dateKey}</th><th class="px-3 py-2">${detectedKeys.valueKey}</th></tr></thead><tbody>`;
+                             processedData.forEach(row => tableHTML += `<tr class="border-b border-slate-200 dark:border-slate-700"><td class="px-3 py-2">${row.date.toLocaleDateString()}</td><td class="px-3 py-2" contenteditable="true" data-index="${row.originalIndex}">${row.value}</td></tr>`);
                              tableHTML += `</tbody></table></div>`;
-                             addCard(tableHTML, true);
+                             addCard(tableHTML, true, 'data-table-card');
                              break;
+                        default:
+                            if(chartInfo.type === 'chart') {
+                                renderChartCard(type, chartInfo.name);
+                            }
                     }
                 });
                 
                 setTimeout(() => {
+                    anime({ targets: '.dashboard-card', translateY: [20, 0], opacity: [0, 1], delay: anime.stagger(80, {easing: 'easeOutExpo'}) });
                     createCharts(aggregates, chartsToRender);
                     attachTableListeners();
+                    if(chartsToRender.includes('ai_summary')) generateGeminiInsights(aggregates);
                 }, 50);
             }
 
             function createCharts(aggregates, chartsToRender) {
                 const isDark = document.documentElement.classList.contains('dark');
-                const baseOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 800, easing: 'easeOutQuart' },
-                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: isDark ? '#374151' : '#e5e7eb' }, ticks: { color: isDark ? '#9ca3af' : '#6b7280' } },
-                        x: { grid: { display: false }, ticks: { color: isDark ? '#9ca3af' : '#6b7280' } }
-                    }
-                };
+                const baseOptions = { responsive: true, maintainAspectRatio: false, animation: { duration: 1000, easing: 'easeOutQuart' }, plugins: { legend: { labels: { color: isDark ? '#cbd5e1' : '#334155' } } }, scales: { y: { beginAtZero: true, grid: { color: isDark ? '#334155' : '#e2e8f0' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } }, x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } } } };
+                const sortedPeriods = Object.entries(aggregates.byPeriod).sort(([, a], [, b]) => a.date - b.date);
                 
-                const sortedPeriods = Object.keys(aggregates.byPeriod).sort((a,b) => {
-                    // Custom sort to handle daily, quarterly, half-yearly, and yearly keys correctly
-                    const dateA = new Date(a.replace(/Q[1-4] |H[1-2] /,''));
-                    const dateB = new Date(b.replace(/Q[1-4] |H[1-2] /,''));
-                    return dateA - dateB;
-                });
-
-                const chartData = {
-                    labels: sortedPeriods,
-                    datasets: [{ label: detectedKeys.valueKey, data: sortedPeriods.map(p => aggregates.byPeriod[p]), backgroundColor: dashboardPreferences.colors, borderColor: dashboardPreferences.colors[2] || '#4f46e5', tension: 0.1, fill: true }]
-                };
-
                 chartsToRender.forEach(type => {
                     const ctx = document.getElementById(`chart-${type}`)?.getContext('2d');
                     if(!ctx) return;
-                    let options = JSON.parse(JSON.stringify(baseOptions)); // Deep copy
-                    if(type === 'pie') options.scales = {};
-
+                    
+                    let chartData;
+                    let options = JSON.parse(JSON.stringify(baseOptions)); 
+                    
+                    if (type === 'scatter') {
+                        chartData = { datasets: [{ label: detectedKeys.valueKey, data: processedData.map(p => ({ x: p.date, y: p.value })), backgroundColor: dashboardPreferences.colors[0] }] };
+                        options.scales.x = { type: 'time', time: { unit: 'day' }, grid: { color: isDark ? '#334155' : '#e2e8f0' }, ticks: { color: isDark ? '#94a3b8' : '#64748b' } };
+                    } else {
+                         chartData = { labels: sortedPeriods.map(([key]) => key), datasets: [{ label: detectedKeys.valueKey, data: sortedPeriods.map(([, val]) => val.value), backgroundColor: dashboardPreferences.colors, borderColor: dashboardPreferences.colors[2] || '#4f46e5', tension: 0.2, fill: type === 'line' }] };
+                    }
+                    
+                    if(['pie', 'doughnut', 'polarArea'].includes(type)) {
+                        options.scales = {};
+                    }
+                    
+                    if(type === 'radar') {
+                        options.scales = { r: { angleLines: { color: isDark ? '#334155' : '#e2e8f0' }, grid: { color: isDark ? '#334155' : '#e2e8f0' }, pointLabels: { color: isDark ? '#94a3b8' : '#64748b' }, ticks: { backdropColor: isDark ? '#1e293b' : '#fff', color: isDark ? '#94a3b8' : '#64748b' } }};
+                    }
                     currentCharts[type] = new Chart(ctx, { type, data: chartData, options });
                 });
             }
@@ -577,112 +772,116 @@
             function attachTableListeners() {
                 const table = document.querySelector('.editable-table');
                 if(!table) return;
-                table.addEventListener('focusout', (event) => {
-                    if (event.target && event.target.hasAttribute('contenteditable')) {
-                        const cell = event.target;
-                        const index = parseInt(cell.dataset.index);
-                        const newValue = parseFloat(cell.textContent);
-                        
+                table.addEventListener('focusout', (e) => {
+                    if (e.target?.hasAttribute('contenteditable')) {
+                        const cell = e.target, index = parseInt(cell.dataset.index), newVal = parseFloat(cell.textContent);
                         const originalRow = processedData.find(d => d.originalIndex === index);
-                        if (!isNaN(newValue) && originalRow.value !== newValue) {
-                            originalRow.value = newValue;
-                            jsonData[index][detectedKeys.valueKey] = newValue;
-                            refreshDashboard();
-                        } else {
-                            // Revert if invalid or unchanged
-                            cell.textContent = originalRow.value;
-                        }
+                        if (!isNaN(newVal) && originalRow.value !== newVal) {
+                            originalRow.value = newVal;
+                            allFilesData[index][detectedKeys.valueKey] = newVal;
+                            regenerateDashboard();
+                        } else { cell.textContent = originalRow.value; }
                     }
                 });
             }
             
-             // --- UI Helper and State Functions ---
-            function showLoading(isLoading, text = '') {
-                loadingSpinner.classList.toggle('hidden', !isLoading);
-                if (isLoading) loadingText.textContent = text;
-                uploadSection.classList.toggle('hidden', isLoading);
+            const showLoading = (isLoading, text = '') => { 
+                dom.loadingSpinner.classList.toggle('hidden', !isLoading);
+                dom.dashboardContainer.classList.toggle('hidden', isLoading);
+                if (isLoading) {
+                    dom.loadingText.textContent = text;
+                    dom.uploadSection.classList.add('hidden');
+                } else {
+                     dom.dashboardContainer.classList.remove('hidden');
+                }
             }
-
-            function handleProcessingError(error, userMessage) {
-                console.error("Processing Error:", error);
-                errorText.textContent = `${userMessage} ${error.message}`;
-                errorMessage.classList.remove('hidden');
-                showLoading(false);
-                hideModal();
-                dashboardSection.classList.add('hidden');
-                uploadSection.classList.add('hidden');
-            }
-
-            function hideError() { errorMessage.classList.add('hidden'); }
-
-            function resetUI() {
-                destroyCharts(); fileInput.value = ''; jsonData = []; processedData = []; fileName = '';
-                uploadSection.classList.remove('hidden');
-                dashboardSection.classList.add('hidden');
-                hideError(); hideModal();
-            }
-
-            function destroyCharts() {
-                Object.values(currentCharts).forEach(chart => chart?.destroy());
-                currentCharts = {};
-            }
-
+            const handleProcessingError = (err, msg) => { console.error("Error:", err); if(dom.errorText) dom.errorText.textContent = `${msg} ${err.message}`; if(dom.errorMessage) dom.errorMessage.classList.remove('hidden'); showLoading(false); dom.dashboardContainer.classList.add('hidden'); }
+            const hideError = () => { if(dom.errorMessage) dom.errorMessage.classList.add('hidden'); }
+            const resetUI = () => { location.reload(); }
+            const destroyCharts = () => { Object.values(currentCharts).forEach(c => c?.destroy()); currentCharts = {}; }
+            
             function updateAllChartThemes(isDark) {
                 Object.values(currentCharts).forEach(chart => {
-                    if (chart) {
-                        chart.options.plugins.legend.labels.color = isDark ? '#e5e7eb' : '#374151';
+                    if (chart?.options) {
+                        chart.options.plugins.legend.labels.color = isDark ? '#cbd5e1' : '#334155';
                         if (chart.options.scales) {
-                           ['x', 'y', 'r'].forEach(axis => {
-                                if(chart.options.scales[axis]) {
-                                    chart.options.scales[axis].grid.color = isDark ? '#374151' : '#e5e7eb';
-                                    chart.options.scales[axis].ticks.color = isDark ? '#9ca3af' : '#6b7280';
+                            Object.keys(chart.options.scales).forEach(axisKey => {
+                                const axis = chart.options.scales[axisKey];
+                                if (axis) {
+                                    if(axis.grid) axis.grid.color = isDark ? '#334155' : '#e2e8f0';
+                                    if(axis.ticks) axis.ticks.color = isDark ? '#94a3b8' : '#64748b';
+                                    if(axis.angleLines) axis.angleLines.color = isDark ? '#334155' : '#e2e8f0';
+                                    if(axis.pointLabels) axis.pointLabels.color = isDark ? '#94a3b8' : '#64748b';
                                 }
-                           });
+                            });
                         }
-                        chart.update();
+                        chart.update('none');
                     }
                 });
             }
 
-            // --- PDF Download ---
-            downloadPdfBtn.addEventListener('click', () => {
-                const dashboard = document.getElementById('dashboard-grid');
-                const title = document.getElementById('dashboard-title').textContent;
-                
+            function handleDownloadPdf() {
                 const wasDark = document.documentElement.classList.contains('dark');
-                if (wasDark) applyTheme(false); 
+                applyTheme(false); 
 
-                downloadPdfBtn.textContent = 'Generating...';
-                downloadPdfBtn.disabled = true;
+                dom.downloadPdfBtn.textContent = 'Generating...';
+                dom.downloadPdfBtn.disabled = true;
 
-                html2canvas(dashboard, { scale: 2, backgroundColor: '#f9fafb', windowWidth: 1400 }).then(canvas => {
-                    if (wasDark) applyTheme(true);
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({ orientation: 'l', unit: 'px', format: 'a4' });
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-                    const canvasAspectRatio = canvas.width / canvas.height;
-                    const pdfAspectRatio = pdfWidth / pdfHeight;
-                    let renderWidth, renderHeight;
+                setTimeout(() => {
+                    const sourceElement = dom.dashboardGrid;
+                    const clonedElement = sourceElement.cloneNode(true);
+                    
+                    const tableCardClone = clonedElement.querySelector('#data-table-card');
+                    if (tableCardClone) tableCardClone.remove();
 
-                    if (canvasAspectRatio > pdfAspectRatio) {
-                        renderWidth = pdfWidth;
-                        renderHeight = pdfWidth / canvasAspectRatio;
-                    } else {
-                        renderHeight = pdfHeight;
-                        renderWidth = pdfHeight * canvasAspectRatio;
+                    const aiSummaryCard = clonedElement.querySelector('#ai-summary-card');
+                    if(aiSummaryCard) {
+                        const aiContent = aiSummaryCard.querySelector('#ai-summary-content');
+                        if (aiContent && (aiContent.querySelector('.spinner') || aiContent.textContent.includes('Please enter a valid'))) {
+                           aiSummaryCard.remove();
+                        }
                     }
                     
-                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, renderWidth, renderHeight);
-                    pdf.save(`${title.replace(/ /g, '_')}.pdf`);
-                }).catch(err => {
-                    handleProcessingError(err, "PDF generation failed.");
-                }).finally(() => {
-                    downloadPdfBtn.textContent = 'Download PDF';
-                    downloadPdfBtn.disabled = false;
-                    if (wasDark) applyTheme(true);
-                });
-            });
+                    clonedElement.style.position = 'absolute';
+                    clonedElement.style.left = '-9999px';
+                    clonedElement.style.top = '0px';
+                    clonedElement.style.width = '1200px'; 
+                    document.body.appendChild(clonedElement);
+
+                    clonedElement.querySelectorAll('*').forEach(el => {
+                        el.style.color = '#1e293b';
+                    });
+                    
+                    anime.remove(clonedElement.querySelectorAll('.dashboard-card'));
+                    Array.from(clonedElement.children).forEach(child => {
+                        child.style.opacity = 1;
+                        child.style.transform = 'none';
+                    });
+                    
+                    html2canvas(clonedElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+                    .then(canvas => {
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF({ orientation: 'l', unit: 'px', format: 'a4' });
+                        const pdfWidth = pdf.internal.pageSize.getWidth(), pdfHeight = pdf.internal.pageSize.getHeight();
+                        const canvasAR = canvas.width / canvas.height, pdfAR = pdfWidth / pdfHeight;
+                        let renderWidth, renderHeight;
+                        if (canvasAR > pdfAR) { renderWidth = pdfWidth; renderHeight = pdfWidth / canvasAR; } 
+                        else { renderHeight = pdfHeight; renderWidth = pdfHeight * canvasAR; }
+                        pdf.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', 0, 0, renderWidth, renderHeight);
+                        pdf.save(`${dom.dashboardTitle.textContent.replace(/ /g, '_')}_Report.pdf`);
+                    }).catch(err => {
+                        console.error("PDF generation failed:", err);
+                        handleProcessingError(err, "PDF generation failed.");
+                    }).finally(() => {
+                        document.body.removeChild(clonedElement);
+                        dom.downloadPdfBtn.textContent = 'Download PDF';
+                        dom.downloadPdfBtn.disabled = false;
+                        if (wasDark) { applyTheme(true); }
+                    });
+                }, 500);
+            }
+
+            init();
         });
     </script>
 </body>
